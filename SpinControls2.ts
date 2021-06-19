@@ -30,7 +30,6 @@ export class SpinControls extends EventDispatcher{
     public dampingFactor: number
     public spinAxisConstraint?: Vector3
 
-
     // Raycast projects pointer line through camera frustum for accurate trackball control.
     // Shoemake has direct touching feel of pointer on orthographically projected sphere but jumps at sphere edge.
     // Holyroyd smooths between sphere and hyperbola to avoid jump at sphere edge.
@@ -89,6 +88,11 @@ export class SpinControls extends EventDispatcher{
         this.dampingFactor = 5; // Increase for more friction
         this.spinAxisConstraint = undefined; // Set to a Vector3 to limit spinning to about an axis
 
+        this.onMouseDown = this.onMouseDown.bind(this);
+        this.onTouchStart = this.onTouchStart.bind(this);
+        this.onTouchMove = this.onTouchMove.bind(this);
+        this.onMouseMove = this.onMouseMove.bind(this);
+        this.onMouseUp = this.onMouseUp.bind(this);
 
         this.domElement.addEventListener( 'pointerdown', this.onMouseDown );
 
@@ -164,6 +168,7 @@ export class SpinControls extends EventDispatcher{
 
             let timeStamp = performance.now();
             let deltaTime = ( timeStamp - this._lastVelTime ) / 1000.0;
+
             this._lastVelTime = timeStamp;
             let deltaAngle;
             if( this.spinAxisConstraint ) {
@@ -190,6 +195,7 @@ export class SpinControls extends EventDispatcher{
 
                 if ( 8 * ( 1 - this._lastQuaternion.dot( this.object.quaternion ) ) > this._EPS) {
 
+                    console.log(deltaTime, deltaAngle, this._applyVelocity_quat)
                     this.dispatchEvent( this.changeEvent );
 
                     this._lastQuaternion.copy( this.object.quaternion );
@@ -497,7 +503,7 @@ export class SpinControls extends EventDispatcher{
                         if ( (this.camera as PerspectiveCamera).isPerspectiveCamera ) {
 
                             ndcToBall = ( 2 / (this.camera as PerspectiveCamera).fov ) // NDC per field of view degree
-                                / Math.atan( this.trackballRadius / objectToCamera.length()) // Ball field of view angle size
+                                / Math.atan( this.trackballRadius / objectToCamera.length()); // Ball field of view angle size
 
                         } else { //Assume orthographic
 
@@ -575,7 +581,6 @@ export class SpinControls extends EventDispatcher{
     }
 
     onMouseDown( event: PointerEvent ) {
-
         if ( this.enabled === false || event.button !== 0 ) return;
 
         this.onPointerDown( event.pageX, event.pageY, event.timeStamp );
@@ -619,7 +624,7 @@ export class SpinControls extends EventDispatcher{
     handleTouchStart( event: TouchEvent ) {
 
         this.onPointerDown( (event as any).pageX, (event as any).pageY, event.timeStamp );
-        this.applyVelocity();  //TODO Should not be needed here
+        // this.applyVelocity();  //TODO Should not be needed here
 
     }
 

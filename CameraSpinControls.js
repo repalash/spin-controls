@@ -14,14 +14,18 @@
 //    Orbit - left mouse / touch: one-finger move
 //    Zoom - middle mouse, or mousewheel / touch: two-finger spread or squish
 //    Pan - right mouse, or left mouse + ctrl/meta/shiftKey, or arrow keys / touch: two-finger move
+import * as THREE from 'three';
+import { SpinControls } from './SpinControls';
 
 function transformTo (outParentToTarget, parent, target) {
 	outParentToTarget.copy(parent);
 	outParentToTarget.invert();
 	outParentToTarget.multiply(target);
 }
+export class CameraSpinControls extends THREE.EventDispatcher {
 
-CameraSpinControls = function ( camera, domElement ) {
+constructor ( camera, domElement ) {
+	super()
 
 	this.domElement = ( domElement !== undefined ) ? domElement : document;
 
@@ -32,10 +36,10 @@ CameraSpinControls = function ( camera, domElement ) {
 	// "target" sets the location of focus, where the object orbits around
 	this.targetObj = new THREE.Object3D();
 	this.target = this.targetObj.position;
-	
+
 	if ( camera.position.length() < EPS ) {
 		camera.position.set(0, 0, 1);
-	}	
+	}
 
 	this.targetObj.lookAt(camera.position);
 
@@ -88,9 +92,9 @@ CameraSpinControls = function ( camera, domElement ) {
 	this.target0 = this.target.clone();
 	this.position0 = this.object.position.clone();
 	this.zoom0 = this.object.zoom;
-	
+
 	var scope = this;
-		  
+
 	//
 	// public methods
 	//
@@ -127,7 +131,7 @@ CameraSpinControls = function ( camera, domElement ) {
 			scope.targetObj.updateWorldMatrix( true, false );
 			scope.object.updateWorldMatrix( true, false );
 			transformTo( scope.trackballToObject, scope.targetObj.matrixWorld, scope.object.matrixWorld );
-			
+
 			// restrict radius to be between desired limits
 			v.setFromMatrixPosition( scope.trackballToObject );
 			v.multiplyScalar( scale );
@@ -141,7 +145,7 @@ CameraSpinControls = function ( camera, domElement ) {
 	}();
 
 	this.setTargetPosition = function ( positionVector ) {
-		
+
 		scope.target.copy( positionVector );
 		this.movedTarget();
 
@@ -189,8 +193,8 @@ CameraSpinControls = function ( camera, domElement ) {
 			// rotation angle update condition is:
 			// min(camera displacement, camera rotation in radians)^2 > EPS
 			// using small-angle approximation cos(x/2) = 1 - x^2 / 8
-			if ( zoomChanged 
-				|| lastPosition.distanceToSquared( scope.object.position ) > EPS 
+			if ( zoomChanged
+				|| lastPosition.distanceToSquared( scope.object.position ) > EPS
 				|| 8 * ( 1 - lastQuaternion.dot( scope.object.quaternion ) ) > EPS ) {
 
 				scope.dispatchEvent( changeEvent );
@@ -211,7 +215,7 @@ CameraSpinControls = function ( camera, domElement ) {
 		};
 
 	}();
-  
+
 	this.onWindowResize = function () {
 
 		scope.spinControl.onWindowResize();
@@ -220,7 +224,7 @@ CameraSpinControls = function ( camera, domElement ) {
 	}
 
 	this.adjustTrackballRadius = function () {
-	  
+
 		var TRACKBALL_PERCENT_OF_SCREEN = .9;
 		var v = new THREE.Vector3();
 		var cameraToTrackball = new THREE.Matrix4();
@@ -231,7 +235,7 @@ CameraSpinControls = function ( camera, domElement ) {
 
 				var limitingFov = Math.min( scope.object.fov,  scope.object.fov * scope.object.aspect );
 				var distanceToScreenSize = Math.sin( ( limitingFov / 2 ) * Math.PI / 180.0 );
-				
+
 				transformTo( cameraToTrackball, scope.object.matrix, scope.targetObj.matrixWorld );
 				v.setFromMatrixPosition( cameraToTrackball );
 				scope.spinControl.trackballRadius = TRACKBALL_PERCENT_OF_SCREEN * v.length() * distanceToScreenSize;
@@ -539,9 +543,9 @@ CameraSpinControls = function ( camera, domElement ) {
 
 		scope.target.setFromMatrixPosition(scope.trackballToObject);
 		var startDistance = scope.target.length();
-		
+
 		scope.target.set( fingerCenter.x, fingerCenter.y, .5 );
-		
+
 		// For unproject, need to update camera.matrixWorldInverse if camera moved before renderer.render
 		scope.object.matrixWorldInverse.copy( scope.object.matrixWorld ).invert();
 
@@ -560,7 +564,7 @@ CameraSpinControls = function ( camera, domElement ) {
 			var dx = event.touches[ 0 ].pageX - event.touches[ 1 ].pageX;
 			var dy = event.touches[ 0 ].pageY - event.touches[ 1 ].pageY;
 			var theta = Math.atan2(dy, dx);
-			
+
 			// Rotation about z axis, inverted
 			rollToCamera.set(0, 0, -Math.sin(theta / 2), Math.cos(theta / 2));
 
@@ -601,16 +605,16 @@ CameraSpinControls = function ( camera, domElement ) {
 			var dx = event.touches[ 0 ].pageX - event.touches[ 1 ].pageX;
 			var dy = event.touches[ 0 ].pageY - event.touches[ 1 ].pageY;
 			var theta = Math.atan2(dy, dx);
-			
+
 			// Rotation about z axis
 			scope.object.quaternion.set(0, 0, Math.sin(theta / 2), Math.cos(theta / 2));
 
 			scope.object.quaternion.premultiply(rollToCamera);
-			
+
 		}
 
 		if ( scope.enableZoom ) {
-			
+
 			moveTargetToFingersCenter( event );
 
 			var dx = event.touches[ 0 ].pageX - event.touches[ 1 ].pageX;
@@ -772,9 +776,9 @@ CameraSpinControls = function ( camera, domElement ) {
 
 	function onMouseWheel( event ) {
 
-		if ( scope.enabled === false 
-			|| scope.enableZoom === false 
-			|| ( state !== STATE.NONE && state !== STATE.ROTATE ) ) 
+		if ( scope.enabled === false
+			|| scope.enableZoom === false
+			|| ( state !== STATE.NONE && state !== STATE.ROTATE ) )
 			return;
 
 		event.preventDefault();
@@ -809,7 +813,7 @@ CameraSpinControls = function ( camera, domElement ) {
 			if ( scope.enableRotate === false ) return;
 
 			state = STATE.ROTATE;
-			
+
 			if ( scope.startTrackballScreenCenter ) {
 
 				scope.target.setFromMatrixPosition(scope.trackballToObject);
@@ -822,11 +826,11 @@ CameraSpinControls = function ( camera, domElement ) {
 			}
 
 		} else if ( event.touches.length >= 2 ) {
-			
+
 			// 2+ finger touch: dolly-pan
-		
-			if ( scope.enableZoom === false 
-				&& scope.enablePan === false 
+
+			if ( scope.enableZoom === false
+				&& scope.enablePan === false
 				&& scope.enableRotate === false) return;
 
 			handleTouchStartDollyPanRoll( event );
@@ -877,7 +881,7 @@ CameraSpinControls = function ( camera, domElement ) {
 		if ( scope.enabled === false ) return;
 
 		if( event.touches.length === 0 ) {
-			
+
 			state = STATE.NONE;
 			endEvent.state = state;
 			scope.dispatchEvent( endEvent );
@@ -895,7 +899,7 @@ CameraSpinControls = function ( camera, domElement ) {
 				scope.setTargetPosition(scope.target);
 
 			}
-			
+
 			state = STATE.ROTATE;
 			scope.spinControl.enabled = true;
 			scope.spinControl.handleTouchStart( event );
@@ -914,35 +918,34 @@ CameraSpinControls = function ( camera, domElement ) {
 
 	}
 
-	
+
 	scope.domElement.addEventListener( 'contextmenu', onContextMenu, false );
 
 	scope.domElement.addEventListener( 'mousedown', onMouseDown, false );
 	scope.domElement.addEventListener( 'wheel', onMouseWheel, false );
 
 	scope.domElement.addEventListener( 'touchstart', onTouchStart, true );
-	
+
 	window.addEventListener( 'keydown', onKeyDown, false );
-	
+
 	scope.spinControl = new SpinControls( this.targetObj, 1, camera, this.domElement );
 	scope.spinControl.rotateSensitivity *= -1; // Negated it to pull camera around sphere as if sphere is fixed.
-	
+
 	scope.domElement.addEventListener( 'touchend', onTouchEnd, true );
 	scope.domElement.addEventListener( 'touchmove', onTouchMove, false );
-	
+
   	scope.spinControl.addEventListener( 'change', function ( event ) {
 
     	scope.dispatchEvent( changeEvent );
 
   	} );
-	
+
 	// Starts touch control off right
 	this.adjustTrackballRadius();
-	
+
 	// force an update at start
 	this.update();
 
-};
+}
 
-CameraSpinControls.prototype = Object.create( THREE.EventDispatcher.prototype );
-CameraSpinControls.prototype.constructor = CameraSpinControls;
+}
