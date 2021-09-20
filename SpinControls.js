@@ -669,6 +669,8 @@ export class SpinControls extends THREE.EventDispatcher{
 	_this.domElement.addEventListener( 'touchmove', onTouchMove, {passive: false} );
 	_this.domElement.addEventListener( 'touchend', onTouchEnd, {passive: false} );
 
+	window.addEventListener( 'resize', ()=>_this.onWindowResize() );
+
 	_this.onWindowResize();
 	// force an update at start
 	_this.update();
